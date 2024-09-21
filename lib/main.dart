@@ -1,316 +1,179 @@
 import 'package:flutter/material.dart';
-import 'dart:math';
+import 'game_controller.dart';
+import 'game_tile.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: '2048游戏',
-      debugShowCheckedModeBanner: false,
+      title: '2048 游戏',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const Game2048(),
+      home: GamePage(),
+      debugShowCheckedModeBanner: false,
     );
   }
 }
 
-class Game2048 extends StatefulWidget {
-  const Game2048({Key? key}) : super(key: key);
-
+class GamePage extends StatefulWidget {
   @override
-  _Game2048State createState() => _Game2048State();
+  _GamePageState createState() => _GamePageState();
 }
 
-class _Game2048State extends State<Game2048> {
-  List<List<int>> board = List.generate(4, (_) => List.filled(4, 0));
-  List<List<int>> prevBoard = List.generate(4, (_) => List.filled(4, 0));
-  List<List<bool>> mergedBoard = List.generate(4, (_) => List.filled(4, false));
-  int score = 0;
-  Random random = Random();
+class _GamePageState extends State<GamePage> {
+  final GameController _controller = GameController();
 
   @override
   void initState() {
     super.initState();
-    addNewTile();
-    addNewTile();
-  }
-
-  void addNewTile() {
-    List<List<int>> emptyTiles = [];
-    for (int i = 0; i < 4; i++) {
-      for (int j = 0; j < 4; j++) {
-        if (board[i][j] == 0) {
-          emptyTiles.add([i, j]);
-        }
+    _controller.startGame();
+    _controller.addListener(() {
+      setState(() {});
+      if (_controller.isGameOver()) {
+        _showGameOverDialog();
       }
-    }
-    if (emptyTiles.isNotEmpty) {
-      List<int> newTile = emptyTiles[random.nextInt(emptyTiles.length)];
-      board[newTile[0]][newTile[1]] = random.nextInt(10) < 9 ? 2 : 4;
-    }
-  }
-
-  void moveLeft() {
-    bool changed = false;
-    List<List<int>> newBoard = List.generate(4, (_) => List.filled(4, 0));
-    List<List<bool>> newMergedBoard = List.generate(4, (_) => List.filled(4, false));
-
-    for (int i = 0; i < 4; i++) {
-      List<int> row = board[i].where((tile) => tile != 0).toList();
-      int k = 0;
-      int newPos = 0;
-      while (k < row.length) {
-        if (k < row.length - 1 && row[k] == row[k + 1]) {
-          newBoard[i][newPos] = row[k] * 2;
-          score += newBoard[i][newPos];
-          newMergedBoard[i][newPos] = true;
-          changed = true;
-          k += 2;
-        } else {
-          newBoard[i][newPos] = row[k];
-          k += 1;
-        }
-        newPos += 1;
-      }
-      for (int j = newPos; j < 4; j++) {
-        newBoard[i][j] = 0;
-      }
-      for (int j = 0; j < 4; j++) {
-        if (board[i][j] != newBoard[i][j]) {
-          changed = true;
-        }
-      }
-    }
-
-    if (changed) {
-      setState(() {
-        prevBoard = List.from(board.map((row) => List<int>.from(row)));
-        board = newBoard;
-        mergedBoard = newMergedBoard;
-      });
-
-      addNewTile();
-    }
-  }
-
-  void moveRight() {
-    board = board.map((row) => row.reversed.toList()).toList();
-    moveLeft();
-    board = board.map((row) => row.reversed.toList()).toList();
-  }
-
-  void moveUp() {
-    board = List.generate(4, (j) => List.generate(4, (i) => board[i][j]));
-    moveLeft();
-    board = List.generate(4, (i) => List.generate(4, (j) => board[j][i]));
-  }
-
-  void moveDown() {
-    board = List.generate(4, (j) => List.generate(4, (i) => board[i][j]));
-    moveRight();
-    board = List.generate(4, (i) => List.generate(4, (j) => board[j][i]));
-  }
-
-  bool isGameOver() {
-    for (int i = 0; i < 4; i++) {
-      for (int j = 0; j < 4; j++) {
-        if (board[i][j] == 0) return false;
-        if (i < 3 && board[i][j] == board[i + 1][j]) return false;
-        if (j < 3 && board[i][j] == board[i][j + 1]) return false;
-      }
-    }
-    return true;
-  }
-
-  void restartGame() {
-    setState(() {
-      board = List.generate(4, (_) => List.filled(4, 0));
-      prevBoard = List.generate(4, (_) => List.filled(4, 0));
-      mergedBoard = List.generate(4, (_) => List.filled(4, false));
-      score = 0;
-      addNewTile();
-      addNewTile();
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('2048 - 分数: $score'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: restartGame,
-          ),
-        ],
-      ),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          GestureDetector(
-            onVerticalDragEnd: (details) {
-              if (details.velocity.pixelsPerSecond.dy < 0) {
-                moveUp();
-              } else {
-                moveDown();
-              }
-            },
-            onHorizontalDragEnd: (details) {
-              if (details.velocity.pixelsPerSecond.dx < 0) {
-                moveLeft();
-              } else {
-                moveRight();
-              }
-            },
-            child: Container(
-              padding: const EdgeInsets.all(10),
-              child: Column(
-                children: List.generate(4, (i) =>
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(4, (j) =>
-                          AnimatedTileWidget(
-                            value: board[i][j],
-                            isMerged: mergedBoard[i][j],
-                          )
-                      ),
-                    )
-                ),
-              ),
+  void _handleSwipe(Direction direction) {
+    print('滑动检测到: $direction');
+    print('滑动前的棋盘状态: ${_controller.board}');
+    setState(() {
+      _controller.move(direction);
+    });
+    print('滑动后的棋盘状态: ${_controller.board}');
+  }
+
+  void _showGameOverDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('游戏结束'),
+          content: Text('您的得分: ${_controller.score}'),
+          actions: [
+            TextButton(
+              child: Text('重新开始'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                setState(() {
+                  _controller.startGame();
+                });
+              },
             ),
-          ),
-          if (isGameOver())
-            ElevatedButton(
-              child: const Text('游戏结束! 重新开始'),
-              onPressed: restartGame,
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class AnimatedTileWidget extends StatefulWidget {
-  final int value;
-  final bool isMerged;
-
-  const AnimatedTileWidget({
-    Key? key,
-    required this.value,
-    required this.isMerged,
-  }) : super(key: key);
-
-  @override
-  _AnimatedTileWidgetState createState() => _AnimatedTileWidgetState();
-}
-
-class _AnimatedTileWidgetState extends State<AnimatedTileWidget> with SingleTickerProviderStateMixin {
-  late AnimationController _localController;
-  late Animation<double> _scaleAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _localController = AnimationController(
-      duration: const Duration(milliseconds: 200),
-      vsync: this,
-    );
-
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.2).animate(
-      CurvedAnimation(
-        parent: _localController,
-        curve: Curves.easeOutBack,
-      ),
-    );
-
-    if (widget.isMerged) {
-      _localController.forward();
-    }
-  }
-
-  @override
-  void didUpdateWidget(covariant AnimatedTileWidget oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (!oldWidget.isMerged && widget.isMerged) {
-      _localController.forward(from: 0);
-    }
-  }
-
-  @override
-  void dispose() {
-    _localController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _scaleAnimation,
-      builder: (context, child) {
-        return Container(
-          width: 70,
-          height: 70,
-          margin: const EdgeInsets.all(5),
-          decoration: BoxDecoration(
-            color: _getColor(),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Center(
-            child: ScaleTransition(
-              scale: widget.isMerged ? _scaleAnimation : AlwaysStoppedAnimation(1.0),
-              child: _buildText(),
-            ),
-          ),
+          ],
         );
       },
     );
   }
 
-  Widget _buildText() {
-    return Text(
-      widget.value > 0 ? widget.value.toString() : '',
-      style: TextStyle(
-        fontSize: widget.value > 512 ? 24 : 32,
-        fontWeight: FontWeight.bold,
-        color: widget.value > 4 ? Colors.white : Colors.black87,
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.grey[900],
+      appBar: AppBar(
+        title: Text('2048'),
+        centerTitle: true,
+        backgroundColor: Colors.grey[850],
+      ),
+      body: Column(
+        children: [
+          SizedBox(height: 20),
+          _buildScoreBoard(),
+          SizedBox(height: 20),
+          Expanded(
+            child: GestureDetector(
+              onVerticalDragEnd: (details) {
+                if (details.primaryVelocity! < 0) {
+                  _handleSwipe(Direction.up);
+                } else if (details.primaryVelocity! > 0) {
+                  _handleSwipe(Direction.down);
+                }
+              },
+              onHorizontalDragEnd: (details) {
+                if (details.primaryVelocity! < 0) {
+                  _handleSwipe(Direction.left);
+                } else if (details.primaryVelocity! > 0) {
+                  _handleSwipe(Direction.right);
+                }
+              },
+              child: Container(
+                padding: EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.grey[800],
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: GridView.builder(
+                  itemCount: 16,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 4,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                  ),
+                  itemBuilder: (context, index) {
+                    int value = _controller.board[index];
+                    return GameTile(value: value);
+                  },
+                ),
+              ),
+            ),
+          ),
+          SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: () {
+              setState(() {
+                _controller.startGame();
+              });
+            },
+            child: Text('重新开始'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blueAccent,
+              padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+              textStyle: TextStyle(fontSize: 18),
+            ),
+          ),
+          SizedBox(height: 20),
+        ],
       ),
     );
   }
 
-  Color _getColor() {
-    switch (widget.value) {
-      case 2:
-        return Colors.lightBlue[100]!;
-      case 4:
-        return Colors.lightBlue[200]!;
-      case 8:
-        return Colors.lightBlue[300]!;
-      case 16:
-        return Colors.lightBlue[400]!;
-      case 32:
-        return Colors.lightBlue[500]!;
-      case 64:
-        return Colors.lightBlue[600]!;
-      case 128:
-        return Colors.lightBlue[700]!;
-      case 256:
-        return Colors.lightBlue[800]!;
-      case 512:
-        return Colors.lightBlue[900]!;
-      case 1024:
-        return Colors.amber[500]!;
-      case 2048:
-        return Colors.amber[700]!;
-      default:
-        return Colors.grey[300]!;
-    }
+  Widget _buildScoreBoard() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _buildScoreBox('得分', _controller.score),
+        SizedBox(width: 20),
+        _buildScoreBox('最高分', _controller.highScore),
+      ],
+    );
+  }
+
+  Widget _buildScoreBox(String title, int score) {
+    return Container(
+      padding: EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.grey[700],
+        borderRadius: BorderRadius.circular(5),
+      ),
+      child: Column(
+        children: [
+          Text(
+            title,
+            style: TextStyle(color: Colors.white70, fontSize: 16),
+          ),
+          SizedBox(height: 5),
+          Text(
+            '$score',
+            style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+    );
   }
 }
