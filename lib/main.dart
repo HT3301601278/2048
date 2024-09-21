@@ -12,6 +12,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: '2048游戏',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
@@ -27,28 +28,18 @@ class Game2048 extends StatefulWidget {
   _Game2048State createState() => _Game2048State();
 }
 
-class _Game2048State extends State<Game2048> with TickerProviderStateMixin {
+class _Game2048State extends State<Game2048> {
   List<List<int>> board = List.generate(4, (_) => List.filled(4, 0));
   List<List<int>> prevBoard = List.generate(4, (_) => List.filled(4, 0));
+  List<List<bool>> mergedBoard = List.generate(4, (_) => List.filled(4, false));
   int score = 0;
   Random random = Random();
-  late AnimationController _controller;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 200),
-      vsync: this,
-    );
     addNewTile();
     addNewTile();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
   }
 
   void addNewTile() {
@@ -69,33 +60,43 @@ class _Game2048State extends State<Game2048> with TickerProviderStateMixin {
   void moveLeft() {
     bool changed = false;
     List<List<int>> newBoard = List.generate(4, (_) => List.filled(4, 0));
+    List<List<bool>> newMergedBoard = List.generate(4, (_) => List.filled(4, false));
 
     for (int i = 0; i < 4; i++) {
       List<int> row = board[i].where((tile) => tile != 0).toList();
-      for (int j = 0; j < row.length - 1; j++) {
-        if (row[j] == row[j + 1]) {
-          row[j] *= 2;
-          score += row[j];
-          row.removeAt(j + 1);
+      int k = 0;
+      int newPos = 0;
+      while (k < row.length) {
+        if (k < row.length - 1 && row[k] == row[k + 1]) {
+          newBoard[i][newPos] = row[k] * 2;
+          score += newBoard[i][newPos];
+          newMergedBoard[i][newPos] = true;
+          changed = true;
+          k += 2;
+        } else {
+          newBoard[i][newPos] = row[k];
+          k += 1;
+        }
+        newPos += 1;
+      }
+      for (int j = newPos; j < 4; j++) {
+        newBoard[i][j] = 0;
+      }
+      for (int j = 0; j < 4; j++) {
+        if (board[i][j] != newBoard[i][j]) {
           changed = true;
         }
       }
-      row = row + List.filled(4 - row.length, 0);
-      if (board[i] != row) changed = true;
-      newBoard[i] = row;
     }
 
     if (changed) {
       setState(() {
         prevBoard = List.from(board.map((row) => List<int>.from(row)));
         board = newBoard;
+        mergedBoard = newMergedBoard;
       });
 
-      _controller.forward(from: 0).then((_) {
-        setState(() {
-          addNewTile();
-        });
-      });
+      addNewTile();
     }
   }
 
@@ -131,7 +132,8 @@ class _Game2048State extends State<Game2048> with TickerProviderStateMixin {
   void restartGame() {
     setState(() {
       board = List.generate(4, (_) => List.filled(4, 0));
-      prevBoard = List.generate(4, (_) => List<int>.filled(4, 0));
+      prevBoard = List.generate(4, (_) => List.filled(4, 0));
+      mergedBoard = List.generate(4, (_) => List.filled(4, false));
       score = 0;
       addNewTile();
       addNewTile();
@@ -145,7 +147,7 @@ class _Game2048State extends State<Game2048> with TickerProviderStateMixin {
         title: Text('2048 - 分数: $score'),
         actions: [
           IconButton(
-            icon: Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh),
             onPressed: restartGame,
           ),
         ],
@@ -169,7 +171,7 @@ class _Game2048State extends State<Game2048> with TickerProviderStateMixin {
               }
             },
             child: Container(
-              padding: EdgeInsets.all(10),
+              padding: const EdgeInsets.all(10),
               child: Column(
                 children: List.generate(4, (i) =>
                     Row(
@@ -177,9 +179,7 @@ class _Game2048State extends State<Game2048> with TickerProviderStateMixin {
                       children: List.generate(4, (j) =>
                           AnimatedTileWidget(
                             value: board[i][j],
-                            prevValue: prevBoard[i][j],
-                            isNew: board[i][j] != 0 && prevBoard[i][j] == 0,
-                            animation: _controller,
+                            isMerged: mergedBoard[i][j],
                           )
                       ),
                     )
@@ -189,7 +189,7 @@ class _Game2048State extends State<Game2048> with TickerProviderStateMixin {
           ),
           if (isGameOver())
             ElevatedButton(
-              child: Text('游戏结束! 重新开始'),
+              child: const Text('游戏结束! 重新开始'),
               onPressed: restartGame,
             ),
         ],
@@ -198,47 +198,76 @@ class _Game2048State extends State<Game2048> with TickerProviderStateMixin {
   }
 }
 
-class AnimatedTileWidget extends StatelessWidget {
+class AnimatedTileWidget extends StatefulWidget {
   final int value;
-  final int prevValue;
-  final bool isNew;
-  final Animation<double> animation;
+  final bool isMerged;
 
-  AnimatedTileWidget({
+  const AnimatedTileWidget({
+    Key? key,
     required this.value,
-    required this.prevValue,
-    required this.isNew,
-    required this.animation,
-  });
+    required this.isMerged,
+  }) : super(key: key);
+
+  @override
+  _AnimatedTileWidgetState createState() => _AnimatedTileWidgetState();
+}
+
+class _AnimatedTileWidgetState extends State<AnimatedTileWidget> with SingleTickerProviderStateMixin {
+  late AnimationController _localController;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _localController = AnimationController(
+      duration: const Duration(milliseconds: 200),
+      vsync: this,
+    );
+
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.2).animate(
+      CurvedAnimation(
+        parent: _localController,
+        curve: Curves.easeOutBack,
+      ),
+    );
+
+    if (widget.isMerged) {
+      _localController.forward();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant AnimatedTileWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!oldWidget.isMerged && widget.isMerged) {
+      _localController.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _localController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final bool hasChanged = value != prevValue;
-
     return AnimatedBuilder(
-      animation: animation,
+      animation: _scaleAnimation,
       builder: (context, child) {
         return Container(
           width: 70,
           height: 70,
-          margin: EdgeInsets.all(5),
+          margin: const EdgeInsets.all(5),
           decoration: BoxDecoration(
             color: _getColor(),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Center(
-            child: hasChanged || isNew
-                ? ScaleTransition(
-              scale: Tween<double>(
-                begin: isNew ? 0.0 : 0.5,
-                end: 1.0,
-              ).animate(CurvedAnimation(
-                parent: animation,
-                curve: Curves.easeInOut,
-              )),
+            child: ScaleTransition(
+              scale: widget.isMerged ? _scaleAnimation : AlwaysStoppedAnimation(1.0),
               child: _buildText(),
-            )
-                : _buildText(),
+            ),
           ),
         );
       },
@@ -247,29 +276,41 @@ class AnimatedTileWidget extends StatelessWidget {
 
   Widget _buildText() {
     return Text(
-      value > 0 ? value.toString() : '',
+      widget.value > 0 ? widget.value.toString() : '',
       style: TextStyle(
-        fontSize: value > 512 ? 24 : 32,
+        fontSize: widget.value > 512 ? 24 : 32,
         fontWeight: FontWeight.bold,
-        color: value > 4 ? Colors.white : Colors.black87,
+        color: widget.value > 4 ? Colors.white : Colors.black87,
       ),
     );
   }
 
   Color _getColor() {
-    switch (value) {
-      case 2: return Colors.lightBlue[100]!;
-      case 4: return Colors.lightBlue[200]!;
-      case 8: return Colors.lightBlue[300]!;
-      case 16: return Colors.lightBlue[400]!;
-      case 32: return Colors.lightBlue[500]!;
-      case 64: return Colors.lightBlue[600]!;
-      case 128: return Colors.lightBlue[700]!;
-      case 256: return Colors.lightBlue[800]!;
-      case 512: return Colors.lightBlue[900]!;
-      case 1024: return Colors.amber[500]!;
-      case 2048: return Colors.amber[700]!;
-      default: return Colors.grey[300]!;
+    switch (widget.value) {
+      case 2:
+        return Colors.lightBlue[100]!;
+      case 4:
+        return Colors.lightBlue[200]!;
+      case 8:
+        return Colors.lightBlue[300]!;
+      case 16:
+        return Colors.lightBlue[400]!;
+      case 32:
+        return Colors.lightBlue[500]!;
+      case 64:
+        return Colors.lightBlue[600]!;
+      case 128:
+        return Colors.lightBlue[700]!;
+      case 256:
+        return Colors.lightBlue[800]!;
+      case 512:
+        return Colors.lightBlue[900]!;
+      case 1024:
+        return Colors.amber[500]!;
+      case 2048:
+        return Colors.amber[700]!;
+      default:
+        return Colors.grey[300]!;
     }
   }
 }
