@@ -96,9 +96,12 @@ class _GamePageState extends State<GamePage> {
                 }
               },
               onHorizontalDragEnd: (details) {
+                print('水平滑动检测到');
                 if (details.primaryVelocity! < 0) {
+                  print('滑动检测到: left');
                   _handleSwipe(Direction.left);
                 } else if (details.primaryVelocity! > 0) {
+                  print('滑动检测到: right');
                   _handleSwipe(Direction.right);
                 }
               },
