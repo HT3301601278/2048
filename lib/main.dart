@@ -87,7 +87,7 @@ class _Game2048State extends State<Game2048> with TickerProviderStateMixin {
 
     if (changed) {
       setState(() {
-        prevBoard = List.from(board);
+        prevBoard = List.from(board.map((row) => List<int>.from(row)));
         board = newBoard;
       });
 
@@ -131,7 +131,7 @@ class _Game2048State extends State<Game2048> with TickerProviderStateMixin {
   void restartGame() {
     setState(() {
       board = List.generate(4, (_) => List.filled(4, 0));
-      prevBoard = List.generate(4, (_) => List.filled(4, 0));
+      prevBoard = List.generate(4, (_) => List<int>.filled(4, 0));
       score = 0;
       addNewTile();
       addNewTile();
@@ -171,22 +171,23 @@ class _Game2048State extends State<Game2048> with TickerProviderStateMixin {
             child: Container(
               padding: EdgeInsets.all(10),
               child: Column(
-                children: List.generate(4, (i) => 
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(4, (j) => 
-                      AnimatedTileWidget(
-                        value: board[i][j],
-                        isNew: board[i][j] != 0 && prevBoard[i][j] == 0,
-                        animation: _controller,
-                      )
-                    ),
-                  )
+                children: List.generate(4, (i) =>
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(4, (j) =>
+                          AnimatedTileWidget(
+                            value: board[i][j],
+                            prevValue: prevBoard[i][j],
+                            isNew: board[i][j] != 0 && prevBoard[i][j] == 0,
+                            animation: _controller,
+                          )
+                      ),
+                    )
                 ),
               ),
             ),
           ),
-          if (isGameOver()) 
+          if (isGameOver())
             ElevatedButton(
               child: Text('游戏结束! 重新开始'),
               onPressed: restartGame,
@@ -199,13 +200,21 @@ class _Game2048State extends State<Game2048> with TickerProviderStateMixin {
 
 class AnimatedTileWidget extends StatelessWidget {
   final int value;
+  final int prevValue;
   final bool isNew;
   final Animation<double> animation;
 
-  AnimatedTileWidget({required this.value, required this.isNew, required this.animation});
+  AnimatedTileWidget({
+    required this.value,
+    required this.prevValue,
+    required this.isNew,
+    required this.animation,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final bool hasChanged = value != prevValue;
+
     return AnimatedBuilder(
       animation: animation,
       builder: (context, child) {
@@ -218,26 +227,32 @@ class AnimatedTileWidget extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
           ),
           child: Center(
-            child: ScaleTransition(
+            child: hasChanged || isNew
+                ? ScaleTransition(
               scale: Tween<double>(
-                begin: isNew ? 0.0 : 1.0,
+                begin: isNew ? 0.0 : 0.5,
                 end: 1.0,
               ).animate(CurvedAnimation(
                 parent: animation,
                 curve: Curves.easeInOut,
               )),
-              child: Text(
-                value > 0 ? value.toString() : '',
-                style: TextStyle(
-                  fontSize: value > 512 ? 24 : 32,
-                  fontWeight: FontWeight.bold,
-                  color: value > 4 ? Colors.white : Colors.black87,
-                ),
-              ),
-            ),
+              child: _buildText(),
+            )
+                : _buildText(),
           ),
         );
       },
+    );
+  }
+
+  Widget _buildText() {
+    return Text(
+      value > 0 ? value.toString() : '',
+      style: TextStyle(
+        fontSize: value > 512 ? 24 : 32,
+        fontWeight: FontWeight.bold,
+        color: value > 4 ? Colors.white : Colors.black87,
+      ),
     );
   }
 
