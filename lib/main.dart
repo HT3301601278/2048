@@ -10,7 +10,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: '2048 游戏',
+      title: '2048',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
@@ -28,6 +28,9 @@ class GamePage extends StatefulWidget {
 class _GamePageState extends State<GamePage> {
   final GameController _controller = GameController();
 
+  Offset _startDragOffset = Offset.zero;
+  bool _isSwipeInProgress = false;
+
   @override
   void initState() {
     super.initState();
@@ -41,12 +44,15 @@ class _GamePageState extends State<GamePage> {
   }
 
   void _handleSwipe(Direction direction) {
-    print('滑动检测到: $direction');
-    print('滑动前的棋盘状态: ${_controller.board}');
-    setState(() {
-      _controller.move(direction);
-    });
-    print('滑动后的棋盘状态: ${_controller.board}');
+    if (!_isSwipeInProgress) {
+      _isSwipeInProgress = true;
+      print('滑动检测到: $direction');
+      print('滑动前的棋盘状态: ${_controller.board}');
+      setState(() {
+        _controller.move(direction);
+      });
+      print('滑动后的棋盘状态: ${_controller.board}');
+    }
   }
 
   void _showGameOverDialog() {
@@ -88,22 +94,38 @@ class _GamePageState extends State<GamePage> {
           SizedBox(height: 20),
           Expanded(
             child: GestureDetector(
-              onVerticalDragEnd: (details) {
-                if (details.primaryVelocity! < 0) {
-                  _handleSwipe(Direction.up);
-                } else if (details.primaryVelocity! > 0) {
-                  _handleSwipe(Direction.down);
+              onPanStart: (details) {
+                _startDragOffset = details.globalPosition;
+                _isSwipeInProgress = false;
+              },
+              onPanUpdate: (details) {
+                if (!_isSwipeInProgress) {
+                  final offset = details.globalPosition - _startDragOffset;
+                  if (offset.dx.abs() > offset.dy.abs()) {
+                    if (offset.dx.abs() > 20) {
+                      if (offset.dx < 0) {
+                        print('向左滑动');
+                        _handleSwipe(Direction.left);
+                      } else {
+                        print('向右滑动');
+                        _handleSwipe(Direction.right);
+                      }
+                    }
+                  } else {
+                    if (offset.dy.abs() > 20) {
+                      if (offset.dy < 0) {
+                        print('向上滑动');
+                        _handleSwipe(Direction.up);
+                      } else {
+                        print('向下滑动');
+                        _handleSwipe(Direction.down);
+                      }
+                    }
+                  }
                 }
               },
-              onHorizontalDragEnd: (details) {
-                print('水平滑动检测到');
-                if (details.primaryVelocity! < 0) {
-                  print('滑动检测到: left');
-                  _handleSwipe(Direction.left);
-                } else if (details.primaryVelocity! > 0) {
-                  print('滑动检测到: right');
-                  _handleSwipe(Direction.right);
-                }
+              onPanEnd: (details) {
+                _isSwipeInProgress = false;
               },
               child: Container(
                 padding: EdgeInsets.all(10),
@@ -112,12 +134,13 @@ class _GamePageState extends State<GamePage> {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: GridView.builder(
-                  itemCount: 16,
+                  physics: NeverScrollableScrollPhysics(),
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 4,
                     crossAxisSpacing: 10,
                     mainAxisSpacing: 10,
                   ),
+                  itemCount: 16,
                   itemBuilder: (context, index) {
                     int value = _controller.board[index];
                     return GameTile(value: value);
@@ -162,7 +185,7 @@ class _GamePageState extends State<GamePage> {
       padding: EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: Colors.grey[700],
-        borderRadius: BorderRadius.circular(5),
+        borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
         children: [

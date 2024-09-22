@@ -24,12 +24,14 @@ class GameController extends ChangeNotifier {
     if (emptyIndices.isNotEmpty) {
       int index = emptyIndices[Random().nextInt(emptyIndices.length)];
       board[index] = Random().nextBool() ? 2 : 4;
+      print('添加了新方块：在位置 $index 添加了值 ${board[index]}');
     }
   }
 
   void move(Direction direction) {
-    print('移动: $direction');
+    print('开始移动: $direction');
     bool moved = false;
+    bool tileAdded = false;
     List<int> oldBoard = List.from(board);
 
     for (int i = 0; i < 4; i++) {
@@ -43,7 +45,6 @@ class GameController extends ChangeNotifier {
       
       List<int> mergedLine = _mergeLine(line);
       
-      // 填充合并后的值
       int fillIndex = 0;
       for (int j = 0; j < 4; j++) {
         int index = _getIndex(i, j, direction);
@@ -56,15 +57,17 @@ class GameController extends ChangeNotifier {
       }
     }
 
-    if (moved) {
-      print('棋盘已更改，添加新方块');
+    if (moved && !tileAdded) {
+      print('移动完成，准备添加新方块');
       addRandomTile();
+      tileAdded = true;
       if (score > highScore) {
         highScore = score;
       }
       notifyListeners();
+      print('新方块添加完成，当前棋盘状态：$board');
     } else {
-      print('未检测到移动');
+      print('未检测到移动或已添加新方块，不再添加新方块');
     }
   }
 
