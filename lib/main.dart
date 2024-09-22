@@ -183,12 +183,7 @@ class _GamePageState extends State<GamePage> {
                       _controller.undo();
                     });
                   } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('无法撤销'),
-                        duration: Duration(seconds: 1),
-                      ),
-                    );
+                    _showCustomSnackBar(context);
                   }
                 },
                 child: Text('撤销'),
@@ -239,5 +234,31 @@ class _GamePageState extends State<GamePage> {
         ],
       ),
     );
+  }
+
+  void _showCustomSnackBar(BuildContext context) {
+    final snackBar = SnackBar(
+      content: Container(
+        padding: EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          children: [
+            Icon(Icons.info_outline, color: Colors.white),
+            SizedBox(width: 12),
+            Text(
+              '无法撤销',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+      ),
+      backgroundColor: Color(0xFF1565C0),
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+      ),
+      duration: Duration(seconds: 2),
+    );
+
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 }
