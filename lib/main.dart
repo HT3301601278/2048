@@ -237,6 +237,7 @@ class _GamePageState extends State<GamePage> {
   }
 
   void _showCustomSnackBar(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
     final snackBar = SnackBar(
       content: Container(
         padding: EdgeInsets.symmetric(vertical: 8),
@@ -257,6 +258,11 @@ class _GamePageState extends State<GamePage> {
         borderRadius: BorderRadius.circular(10),
       ),
       duration: Duration(seconds: 2),
+      margin: EdgeInsets.only(
+        bottom: screenSize.height * 0.15, // 屏幕高度的15%
+        left: screenSize.width * 0.05,   // 屏幕宽度的5%
+        right: screenSize.width * 0.05,  // 屏幕宽度的5%
+      ),
     );
 
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
