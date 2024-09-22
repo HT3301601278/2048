@@ -29,6 +29,16 @@ class GameTile extends StatelessWidget {
         return Color(0xFFEDC53F);
       case 2048:
         return Color(0xFFEDC22E);
+      case 4096:
+        return Color(0xFFE5C12E);
+      case 8192:
+        return Color(0xFFE2B12E);
+      case 16384:
+        return Color(0xFFDFA02E);
+      case 32768:
+        return Color(0xFFDC902E);
+      case 65536:
+        return Color(0xFFD9802E);
       default:
         return Color(0xFFCDC1B4);
     }
@@ -45,7 +55,7 @@ class GameTile extends StatelessWidget {
         child: Text(
           value == 0 ? '' : '$value',
           style: TextStyle(
-            fontSize: 24,
+            fontSize: value < 100 ? 24 : value < 1000 ? 20 : value < 10000 ? 16 : 12,
             fontWeight: FontWeight.bold,
             color: value <= 4 ? Color(0xFF776E65) : Colors.white,
           ),
