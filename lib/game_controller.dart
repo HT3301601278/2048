@@ -7,10 +7,15 @@ class GameController extends ChangeNotifier {
   List<int> board = List.filled(16, 0);
   int score = 0;
   int highScore = 0;
+  List<List<int>> history = [];
+  List<int> scoreHistory = [];
+  int maxHistoryLength = 3;
 
   void startGame() {
     board = List.filled(16, 0);
     score = 0;
+    history.clear();
+    scoreHistory.clear();
     addRandomTile();
     addRandomTile();
     notifyListeners();
@@ -31,8 +36,8 @@ class GameController extends ChangeNotifier {
   void move(Direction direction) {
     print('开始移动: $direction');
     bool moved = false;
-    bool tileAdded = false;
     List<int> oldBoard = List.from(board);
+    int oldScore = score;
 
     for (int i = 0; i < 4; i++) {
       List<int> line = [];
@@ -57,18 +62,35 @@ class GameController extends ChangeNotifier {
       }
     }
 
-    if (moved && !tileAdded) {
+    if (moved) {
+      history.add(oldBoard);
+      scoreHistory.add(oldScore);
+      if (history.length > maxHistoryLength) {
+        history.removeAt(0);
+        scoreHistory.removeAt(0);
+      }
       print('移动完成，准备添加新方块');
       addRandomTile();
-      tileAdded = true;
       if (score > highScore) {
         highScore = score;
       }
       notifyListeners();
       print('新方块添加完成，当前棋盘状态：$board');
     } else {
-      print('未检测到移动或已添加新方块，不再添加新方块');
+      print('未检测到移动，不添加新方块');
     }
+  }
+
+  void undo() {
+    if (history.isNotEmpty) {
+      board = history.removeLast();
+      score = scoreHistory.removeLast();
+      notifyListeners();
+    }
+  }
+
+  bool canUndo() {
+    return history.isNotEmpty;
   }
 
   int _getIndex(int i, int j, Direction direction) {

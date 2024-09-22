@@ -8,29 +8,29 @@ class GameTile extends StatelessWidget {
   Color _getTileColor(int value) {
     switch (value) {
       case 2:
-        return Colors.grey[300]!;
+        return Color(0xFFEEE4DA);
       case 4:
-        return Colors.grey[400]!;
+        return Color(0xFFEDE0C8);
       case 8:
-        return Colors.orange[300]!;
+        return Color(0xFFF2B179);
       case 16:
-        return Colors.orange[400]!;
+        return Color(0xFFF59563);
       case 32:
-        return Colors.orange[500]!;
+        return Color(0xFFF67C5F);
       case 64:
-        return Colors.redAccent;
+        return Color(0xFFF65E3B);
       case 128:
-        return Colors.purpleAccent;
+        return Color(0xFFEDCF72);
       case 256:
-        return Colors.purple;
+        return Color(0xFFEDCC61);
       case 512:
-        return Colors.blueAccent;
+        return Color(0xFFEDC850);
       case 1024:
-        return Colors.blue;
+        return Color(0xFFEDC53F);
       case 2048:
-        return Colors.green;
+        return Color(0xFFEDC22E);
       default:
-        return Colors.grey[500]!;
+        return Color(0xFFCDC1B4);
     }
   }
 
@@ -47,7 +47,7 @@ class GameTile extends StatelessWidget {
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
-            color: value <= 4 ? Colors.black : Colors.white,
+            color: value <= 4 ? Color(0xFF776E65) : Colors.white,
           ),
         ),
       ),

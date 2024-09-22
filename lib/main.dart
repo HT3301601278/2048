@@ -13,6 +13,7 @@ class MyApp extends StatelessWidget {
       title: '2048',
       theme: ThemeData(
         primarySwatch: Colors.blue,
+        scaffoldBackgroundColor: Color(0xFFF0F0F0),
       ),
       home: GamePage(),
       debugShowCheckedModeBanner: false,
@@ -81,11 +82,11 @@ class _GamePageState extends State<GamePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[900],
+      backgroundColor: Color(0xFFF0F0F0),
       appBar: AppBar(
-        title: Text('2048'),
+        title: Text('2048', style: TextStyle(color: Colors.white)),
         centerTitle: true,
-        backgroundColor: Colors.grey[850],
+        backgroundColor: Color(0xFF1565C0),
       ),
       body: Column(
         children: [
@@ -130,8 +131,15 @@ class _GamePageState extends State<GamePage> {
               child: Container(
                 padding: EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.grey[800],
+                  color: Color(0xFFE0E0E0),
                   borderRadius: BorderRadius.circular(10),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 5,
+                      offset: Offset(0, 3),
+                    ),
+                  ],
                 ),
                 child: GridView.builder(
                   physics: NeverScrollableScrollPhysics(),
@@ -150,18 +158,48 @@ class _GamePageState extends State<GamePage> {
             ),
           ),
           SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: () {
-              setState(() {
-                _controller.startGame();
-              });
-            },
-            child: Text('重新开始'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blueAccent,
-              padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-              textStyle: TextStyle(fontSize: 18),
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    _controller.startGame();
+                  });
+                },
+                child: Text('重新开始'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Color(0xFF1565C0),
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                  textStyle: TextStyle(fontSize: 18),
+                ),
+              ),
+              SizedBox(width: 20),
+              ElevatedButton(
+                onPressed: () {
+                  if (_controller.canUndo()) {
+                    setState(() {
+                      _controller.undo();
+                    });
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('无法撤销'),
+                        duration: Duration(seconds: 1),
+                      ),
+                    );
+                  }
+                },
+                child: Text('撤销'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Color(0xFF4CAF50),
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                  textStyle: TextStyle(fontSize: 18),
+                ),
+              ),
+            ],
           ),
           SizedBox(height: 20),
         ],
@@ -184,7 +222,7 @@ class _GamePageState extends State<GamePage> {
     return Container(
       padding: EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: Colors.grey[700],
+        color: Color(0xFF1565C0),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
