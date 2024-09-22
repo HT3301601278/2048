@@ -1,16 +1,50 @@
-# helloflutter
+# Flutter 2048 游戏
 
-A new Flutter project.
+这是一个使用Flutter开发的2048游戏应用。2048是一个经典的数字滑块游戏，玩家通过滑动来合并相同的数字，目标是达到2048或更高的数字。
 
-## Getting Started
+## 功能特点
 
-This project is a starting point for a Flutter application.
+- 经典的2048游戏玩法
+- 流畅的滑动操作
+- 实时得分显示
+- 最高分记录
+- 游戏结束提示
+- 重新开始功能
+- 撤销上一步操作
+- 现代化的UI设计
 
-A few resources to get you started if this is your first Flutter project:
+## 技术细节
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+- 使用Flutter框架开发
+- 状态管理：使用StatefulWidget和setState
+- 手势识别：使用GestureDetector实现滑动操作
+- 自定义组件：如GameTile用于显示每个数字方块
+- 游戏逻辑：通过GameController类管理游戏状态和操作
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## 如何运行
+
+1. 确保您的开发环境已经安装了Flutter SDK。
+2. 克隆此仓库到本地。
+3. 在项目根目录运行 `flutter pub get` 安装依赖。
+4. 连接设备或启动模拟器，然后运行 `flutter run`。
+
+## 项目结构
+
+- `lib/main.dart`: 主程序入口，包含UI布局和游戏逻辑
+- `lib/game_controller.dart`: 游戏控制器，管理游戏状态和操作
+- `lib/game_tile.dart`: 游戏方块组件，用于显示每个数字方块
+
+## 待优化项
+
+- 添加动画效果，使游戏更加生动
+- 实现本地存储，保存最高分和游戏进度
+- 添加更多主题选项
+- 优化大屏幕设备的显示效果
+
+## 贡献
+
+欢迎提交问题和改进建议。如果您想为这个项目做出贡献，请提交pull request。
+
+## 许可证
+
+[在此添加您的许可证信息]
